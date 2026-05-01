@@ -8,17 +8,32 @@ In this demo, we demonstrate similar experiments using `Qwen3-4B-Instruct-2507`,
 
 ### Installation and Setup
 
-This demo is built with Chroma DB and the Gemini API. You can install the additional dependencies by
+This demo is built with Chroma DB and the DashScope Embedding API (OpenAI-compatible). Install the additional dependencies with:
 
 ```bash
 uv pip install -e .[vector-search]
 ```
 
-By default, we use google vertex ai for the embedding service, and you need to set `$GOOGLE_GENAI_USE_VERTEXAI`, `$GCP_VERTEXAI_PROJECT_NUMBER`, `$GCP_VERTEXAI_REGION`. Or, tweak `./embedding.py` to authenticate differently.
+Create a `.env` file in the project root (or anywhere in the directory tree above where you run the script) with the following variables:
+
+```dotenv
+EMBEDDING_BINDING_API_KEY=sk-xxxx
+EMBEDDING_BINDING_HOST=https://dashscope.aliyuncs.com/compatible-mode/v1
+```
+
+The `.env` file is loaded automatically at startup via `python-dotenv`. You can also set these as regular shell environment variables instead.
+
+| Variable | Description | Default |
+|---|---|---|
+| `EMBEDDING_BINDING_API_KEY` | DashScope API key (required) | — |
+| `EMBEDDING_BINDING_HOST` | DashScope base URL | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
 
 Currently, the tool use RL run relies on a separate Chroma vector search service. You can set it up with the following step:
 
 1. You can download a pre-computed wiki18 index: https://huggingface.co/datasets/tianyi-thinks/2018-wiki-index/blob/main/chroma_db.tar.xz
+
+   > **Note:** The pre-computed index was built with a different embedding model (Gemini). If you use DashScope's `text-embedding-v4`, the vector space will not match and retrieval quality will be poor. You will need to rebuild the index using DashScope embeddings, or use the same embedding model that was used to build the index.
+
 2. Launch the Chroma service on localhost. Example command: `chroma run --host localhost --path <decompressed_path>/chroma_db --port 8000`
 
 If you launch the chroma service locally, you generally need 160+ GB RAM to load the vector index in memory for good performance.
@@ -45,7 +60,7 @@ To speed up training, you may consider turning on `--stream_minibatch`. In princ
 ### Extensions: How to Include Other Tools?
 
 1. The tool call rendering / parsing logic is in [tinker_cookbook/renderers/](../../renderers/). Tool calling is supported on multiple renderers (Qwen, GPT-OSS, DeepSeek, Kimi). Currently, the system prompt necessary for enabling tool calling is included in `./search_env.py` (`SEARCH_TASK_INSTRUCTIONS`) and is written specifically for Qwen. Changing the tool calling parsing format requires updating the system prompt accordingly.
-2. Extend `./embedding.py` to replace the Gemini embedding.
+2. Extend `./embedding.py` to replace the DashScope embedding — implement an alternative `get_*_client()` / `get_*_embedding()` pair and swap the imports in `tools.py`.
 3. Extend `./tools.py` to add new tools using the `@tool` decorator - see `ChromaTool.search()` as an example.
 
 ### Replication Results
@@ -63,6 +78,6 @@ The key differences between our experiment and the original paper include:
 
 1. We used the default importance-weighting REINFORCE loss implemented in Tinker
 2. We used the default synchronous rollout logic in the Tinker Cookbook
-3. We used Gemini embedding and Chroma DB, motivated by their ease of setup for a public demo. In exploratory experiments, the Gemini embedding does not improve RL performance over the E5 embedding model used in the original paper.
+3. We used DashScope `text-embedding-v4` and Chroma DB, motivated by their ease of setup for a public demo. In exploratory experiments, embedding model choice does not significantly improve RL performance over the E5 embedding model used in the original paper.
 
 [1] Jin, B., Zeng, H., Yue, Z., Yoon, J., Arık, S. O., Wang, D., Zamani, H., & Han, J. (2025). Search-R1: Training LLMs to reason and leverage search engines with reinforcement learning. arXiv preprint arXiv:2503.09516.
