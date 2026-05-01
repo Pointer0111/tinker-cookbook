@@ -17,18 +17,17 @@ uv pip install -e .[vector-search]
 Create a `.env` file in the project root (or anywhere in the directory tree above where you run the script) with the following variables:
 
 ```dotenv
-GOOGLE_GENAI_USE_VERTEXAI=true
-GCP_VERTEXAI_PROJECT_NUMBER=your-project-number
-GCP_VERTEXAI_REGION=your-region
+GEMINI_API_KEY=your-api-key
 ```
 
 The `.env` file is loaded automatically at startup via `python-dotenv`. You can also set these as regular shell environment variables instead.
 
 | Variable | Description | Default |
 |---|---|---|
-| `GOOGLE_GENAI_USE_VERTEXAI` | Use Vertex AI backend | `true` |
-| `GCP_VERTEXAI_PROJECT_NUMBER` | GCP project number (required) | — |
-| `GCP_VERTEXAI_REGION` | GCP region (required) | — |
+| `GEMINI_API_KEY` | Gemini API key (required when not using Vertex AI) | — |
+| `GOOGLE_GENAI_USE_VERTEXAI` | Set to `true` to use Vertex AI instead of the API key | `false` |
+| `GCP_VERTEXAI_PROJECT_NUMBER` | GCP project number (required if Vertex AI enabled) | — |
+| `GCP_VERTEXAI_REGION` | GCP region (required if Vertex AI enabled) | — |
 
 Currently, the tool use RL run relies on a separate Chroma vector search service. You can set it up with the following step:
 

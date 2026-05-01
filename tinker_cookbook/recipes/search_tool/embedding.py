@@ -33,28 +33,37 @@ def get_gemini_client(
     http_options: types.HttpOptions | None = None,
     **kwargs: Any,
 ) -> genai.Client:
-    import google.genai as genai
     from google.genai.types import HttpOptions
 
-    project = project or environ.get("GCP_VERTEXAI_PROJECT_NUMBER")
-    if project is None:
-        raise ValueError("$GCP_VERTEXAI_PROJECT_NUMBER is not set")
-
-    location = location or environ.get("GCP_VERTEXAI_REGION")
-    if location is None:
-        raise ValueError("$GCP_VERTEXAI_REGION is not set")
-
-    return genai.Client(
-        vertexai=(
-            environ.get("GOOGLE_GENAI_USE_VERTEXAI", "True").lower().strip().startswith("t")
-            if vertexai is None
-            else vertexai
-        ),
-        project=project,
-        location=location,
-        http_options=http_options or HttpOptions(api_version="v1", timeout=10 * 1000),
-        **kwargs,
+    use_vertexai = (
+        environ.get("GOOGLE_GENAI_USE_VERTEXAI", "False").lower().strip().startswith("t")
+        if vertexai is None
+        else vertexai
     )
+
+    if use_vertexai:
+        project = project or environ.get("GCP_VERTEXAI_PROJECT_NUMBER")
+        if project is None:
+            raise ValueError("$GCP_VERTEXAI_PROJECT_NUMBER is not set")
+        location = location or environ.get("GCP_VERTEXAI_REGION")
+        if location is None:
+            raise ValueError("$GCP_VERTEXAI_REGION is not set")
+        return genai.Client(
+            vertexai=True,
+            project=project,
+            location=location,
+            http_options=http_options or HttpOptions(api_version="v1", timeout=10 * 1000),
+            **kwargs,
+        )
+    else:
+        api_key = environ.get("GEMINI_API_KEY")
+        if api_key is None:
+            raise ValueError("$GEMINI_API_KEY is not set")
+        return genai.Client(
+            api_key=api_key,
+            http_options=http_options or HttpOptions(api_version="v1", timeout=10 * 1000),
+            **kwargs,
+        )
 
 
 async def get_gemini_embedding(
