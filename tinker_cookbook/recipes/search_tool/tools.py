@@ -10,14 +10,14 @@ from typing import Annotated
 
 import chromadb
 import chz
+import google.genai as genai
 from chromadb.api import AsyncClientAPI
 from chromadb.api.types import QueryResult
 from chromadb.config import Settings
-from openai import AsyncOpenAI
 
 from tinker_cookbook.recipes.search_tool.embedding import (
-    get_dashscope_client,
-    get_dashscope_embedding,
+    get_gemini_client,
+    get_gemini_embedding,
 )
 from tinker_cookbook.renderers import get_text_content
 from tinker_cookbook.renderers.base import Message
@@ -52,8 +52,9 @@ _CONNECTION_SEMAPHORE = asyncio.Semaphore(128)
 
 @chz.chz
 class EmbeddingConfig:
-    model_name: str = "text-embedding-v4"
-    embedding_dim: int = 1024
+    model_name: str = "gemini-embedding-001"
+    embedding_dim: int = 768
+    task_type: str = "RETRIEVAL_QUERY"
 
 
 @chz.chz
@@ -74,7 +75,7 @@ class ChromaTool:
     def __init__(
         self,
         chroma_client: AsyncClientAPI,
-        dashscope_client: AsyncOpenAI,
+        gemini_client: genai.Client,
         collection_name: str,
         retrieval_config: RetrievalConfig,
         max_retries: int,
@@ -85,7 +86,7 @@ class ChromaTool:
         chroma_port: int | None = None,
     ):
         self._chroma_client: AsyncClientAPI | None = chroma_client
-        self._dashscope_client: AsyncOpenAI | None = dashscope_client
+        self._gemini_client: genai.Client | None = gemini_client
         self._collection_name = collection_name
         self._retrieval_config = retrieval_config
         self._max_retries = max_retries
@@ -97,10 +98,10 @@ class ChromaTool:
         """Exclude non-pickleable async clients from pickle state."""
         state = self.__dict__.copy()
         state["_chroma_client"] = None
-        state["_dashscope_client"] = None
+        state["_gemini_client"] = None
         return state
 
-    async def _ensure_clients(self) -> tuple[AsyncClientAPI, AsyncOpenAI]:
+    async def _ensure_clients(self) -> tuple[AsyncClientAPI, genai.Client]:
         """Return live clients, reconnecting if needed after deserialization."""
         if self._chroma_client is None:
             if self._chroma_host is None or self._chroma_port is None:
@@ -113,9 +114,9 @@ class ChromaTool:
                 port=self._chroma_port,
                 settings=Settings(anonymized_telemetry=False),
             )
-        if self._dashscope_client is None:
-            self._dashscope_client = get_dashscope_client()
-        return self._chroma_client, self._dashscope_client
+        if self._gemini_client is None:
+            self._gemini_client = get_gemini_client()
+        return self._chroma_client, self._gemini_client
 
     @staticmethod
     async def build(
@@ -127,7 +128,7 @@ class ChromaTool:
         initial_retry_delay: int = 1,
         # Optional shared resources - None means build your own
         chroma_client: AsyncClientAPI | None = None,
-        dashscope_client: AsyncOpenAI | None = None,
+        gemini_client: genai.Client | None = None,
     ) -> ChromaTool:
         """Async factory for building ChromaTool.
 
@@ -139,7 +140,7 @@ class ChromaTool:
             max_retries: Max retries for ChromaDB queries.
             initial_retry_delay: Initial delay between retries (exponential backoff).
             chroma_client: Optional pre-built ChromaDB client (for sharing across tools).
-            dashscope_client: Optional pre-built DashScope client (for sharing across tools).
+            gemini_client: Optional pre-built Gemini client (for sharing across tools).
         """
         if chroma_client is None:
             chroma_client = await chromadb.AsyncHttpClient(
@@ -147,11 +148,11 @@ class ChromaTool:
                 port=chroma_port,
                 settings=Settings(anonymized_telemetry=False),
             )
-        if dashscope_client is None:
-            dashscope_client = get_dashscope_client()
+        if gemini_client is None:
+            gemini_client = get_gemini_client()
         return ChromaTool(
             chroma_client,
-            dashscope_client,
+            gemini_client,
             chroma_collection_name,
             retrieval_config,
             max_retries,
@@ -161,14 +162,15 @@ class ChromaTool:
         )
 
     async def _get_embeddings_with_retry(
-        self, dashscope_client: AsyncOpenAI, query_list: list[str]
+        self, gemini_client: genai.Client, query_list: list[str]
     ) -> list[list[float]]:
         embedding_config = self._retrieval_config.embedding_config
-        return await get_dashscope_embedding(
-            dashscope_client,
+        return await get_gemini_embedding(
+            gemini_client,
             query_list,
             embedding_config.model_name,
             embedding_config.embedding_dim,
+            embedding_config.task_type,
         )
 
     async def _query_chroma_with_retry(
@@ -204,9 +206,9 @@ class ChromaTool:
         ],
     ) -> ToolResult:
         """Search Wikipedia for relevant information based on the given query."""
-        chroma_client, dashscope_client = await self._ensure_clients()
+        chroma_client, gemini_client = await self._ensure_clients()
         async with _CONNECTION_SEMAPHORE:
-            embeddings = await self._get_embeddings_with_retry(dashscope_client, query_list)
+            embeddings = await self._get_embeddings_with_retry(gemini_client, query_list)
             results = await self._query_chroma_with_retry(chroma_client, embeddings)
 
         # Format same as original ChromaToolClient.invoke()

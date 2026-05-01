@@ -20,7 +20,7 @@ class TestChromatoolPickle:
 
         tool = ChromaTool(
             chroma_client=MagicMock(),
-            dashscope_client=MagicMock(),
+            gemini_client=MagicMock(),
             collection_name="wiki_chunks",
             retrieval_config=RetrievalConfig(),
             max_retries=5,
@@ -30,7 +30,7 @@ class TestChromatoolPickle:
         )
         state = tool.__getstate__()
         assert state["_chroma_client"] is None
-        assert state["_dashscope_client"] is None
+        assert state["_gemini_client"] is None
         assert state["_chroma_host"] == "localhost"
         assert state["_chroma_port"] == 8000
         assert state["_collection_name"] == "wiki_chunks"

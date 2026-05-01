@@ -128,8 +128,8 @@ async def evaluate_one_dataset(data: list[SearchR1Datum], config: CLIConfig):
         retrieval_config=RetrievalConfig(
             n_results=3,
             embedding_config=EmbeddingConfig(
-                model_name="text-embedding-v4",
-                embedding_dim=1024,
+                model_name="gemini-embedding-001",
+                embedding_dim=768,
             ),
         ),
     )

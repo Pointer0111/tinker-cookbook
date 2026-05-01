@@ -40,8 +40,8 @@ class CLIConfig:
     chroma_port: int = 8001
     chroma_collection_name: str = "wiki_embeddings"
     n_results: int = 3
-    embedding_model_name: str = "text-embedding-v4"
-    embedding_dim: int = 1024
+    embedding_model_name: str = "gemini-embedding-001"
+    embedding_dim: int = 768
 
     # Streaming configuration
     stream_minibatch: bool = False
