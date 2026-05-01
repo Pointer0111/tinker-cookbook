@@ -58,9 +58,10 @@ def get_gemini_client(
     else:
         if environ.get("GEMINI_API_KEY") is None:
             raise ValueError("$GEMINI_API_KEY is not set")
-        # SDK automatically reads GEMINI_API_KEY from the environment
+        # SDK automatically reads GEMINI_API_KEY from the environment.
+        # Standard Gemini API requires v1beta for embedding models.
         return genai.Client(
-            http_options=http_options or HttpOptions(api_version="v1", timeout=10 * 1000),
+            http_options=http_options or HttpOptions(api_version="v1beta", timeout=10 * 1000),
             **kwargs,
         )
 
