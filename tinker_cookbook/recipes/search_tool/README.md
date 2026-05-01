@@ -56,6 +56,38 @@ A successful run generally learns multi-turn search within 10-25 steps, which ca
 
 To speed up training, you may consider turning on `--stream_minibatch`. In principle, this system improvement should have minimal effect on training.
 
+### Troubleshooting
+
+**`AttributeError: module aiohttp has no attribute ClientConnectorDNSError`**
+
+This means `aiohttp` is too old. The Gemini SDK requires `aiohttp>=3.9.0`. Upgrade with:
+
+```bash
+pip install --upgrade aiohttp
+```
+
+Verify the version is 3.9.0 or above:
+
+```bash
+pip show aiohttp | grep Version
+```
+
+Note: the underlying cause of this error is usually a network failure (DNS resolution error when connecting to `generativelanguage.googleapis.com`). Before upgrading aiohttp, verify that the server can reach the Gemini API:
+
+```bash
+curl -I https://generativelanguage.googleapis.com
+```
+
+A `404` response (after `200 Connection established`) confirms connectivity is fine and the issue is purely the aiohttp version.
+
+**ChromaDB dimension mismatch**
+
+```
+Collection expecting embedding with dimension of 768, got 1024
+```
+
+The pre-computed wiki18 Chroma index was built with Gemini `gemini-embedding-001` (768-dim). If you switch to a different embedding model with a different output dimension, the index must be rebuilt with that model. Make sure `embedding_dim` in your config matches the dimension used to build the index.
+
 ### Extensions: How to Include Other Tools?
 
 1. The tool call rendering / parsing logic is in [tinker_cookbook/renderers/](../../renderers/). Tool calling is supported on multiple renderers (Qwen, GPT-OSS, DeepSeek, Kimi). Currently, the system prompt necessary for enabling tool calling is included in `./search_env.py` (`SEARCH_TASK_INSTRUCTIONS`) and is written specifically for Qwen. Changing the tool calling parsing format requires updating the system prompt accordingly.
