@@ -56,11 +56,10 @@ def get_gemini_client(
             **kwargs,
         )
     else:
-        api_key = environ.get("GEMINI_API_KEY")
-        if api_key is None:
+        if environ.get("GEMINI_API_KEY") is None:
             raise ValueError("$GEMINI_API_KEY is not set")
+        # SDK automatically reads GEMINI_API_KEY from the environment
         return genai.Client(
-            api_key=api_key,
             http_options=http_options or HttpOptions(api_version="v1", timeout=10 * 1000),
             **kwargs,
         )
