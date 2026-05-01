@@ -10,9 +10,14 @@ from os import environ
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
-load_dotenv()
+_dotenv_loaded = load_dotenv()
 
 logger = getLogger(__name__)
+
+if _dotenv_loaded:
+    print("[embedding] .env file loaded successfully")
+else:
+    print("[embedding] no .env file found, using environment variables")
 
 MAX_RETRIES = 10
 RETRY_DELAY = 1.0

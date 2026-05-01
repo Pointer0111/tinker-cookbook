@@ -34,7 +34,7 @@ Currently, the tool use RL run relies on a separate Chroma vector search service
 
    > **Note:** The pre-computed index was built with a different embedding model (Gemini). If you use DashScope's `text-embedding-v4`, the vector space will not match and retrieval quality will be poor. You will need to rebuild the index using DashScope embeddings, or use the same embedding model that was used to build the index.
 
-2. Launch the Chroma service on localhost. Example command: `chroma run --host localhost --path /gz-data/tmp/tianyi/tool_caches/local_chroma/chroma_db --port 8000`
+2. Launch the Chroma service on localhost. Example command: `chroma run --host localhost --path /gz-data/tmp/tianyi/tool_caches/local_chroma/chroma_db --port 8001`
 
 If you launch the chroma service locally, you generally need 160+ GB RAM to load the vector index in memory for good performance.
 

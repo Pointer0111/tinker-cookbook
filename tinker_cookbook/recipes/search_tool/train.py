@@ -37,7 +37,7 @@ class CLIConfig:
 
     # Chroma configuration
     chroma_host: str = "localhost"
-    chroma_port: int = 8000
+    chroma_port: int = 8001
     chroma_collection_name: str = "wiki_embeddings"
     n_results: int = 3
     embedding_model_name: str = "text-embedding-v4"

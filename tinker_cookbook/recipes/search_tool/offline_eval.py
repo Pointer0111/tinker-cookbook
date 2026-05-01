@@ -123,7 +123,7 @@ async def evaluate_one_dataset(data: list[SearchR1Datum], config: CLIConfig):
 
     chroma_tool = await ChromaTool.build(
         chroma_host="localhost",
-        chroma_port=8000,
+        chroma_port=8001,
         chroma_collection_name="wiki_embeddings",
         retrieval_config=RetrievalConfig(
             n_results=3,
