@@ -47,7 +47,7 @@ def normalize_answer(s: str) -> str:
 
 logger = logging.getLogger(__name__)
 
-_CONNECTION_SEMAPHORE = asyncio.Semaphore(128)
+_CONNECTION_SEMAPHORE = asyncio.Semaphore(8)
 
 
 @chz.chz

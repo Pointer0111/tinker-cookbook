@@ -3,6 +3,7 @@ Shared utilities for Gemini embedding generation with retry logic
 """
 
 import asyncio
+import re
 from logging import getLogger
 from os import environ
 from typing import Any
@@ -104,7 +105,7 @@ async def get_gemini_embedding(
         if not text.strip():
             raise ValueError(f"Text at index {i} is empty or whitespace only")
 
-    # Retry logic with exponential backoff
+    # Retry logic with exponential backoff, respecting 429 retryDelay
     for attempt in range(max_retries):
         try:
             async with asyncio.timeout(10):
@@ -135,7 +136,13 @@ async def get_gemini_embedding(
 
         except Exception as e:
             if attempt < max_retries - 1:
-                wait_time = retry_delay * (1.5**attempt)  # Exponential backoff
+                error_str = str(e)
+                # 429 rate limit: honour the retryDelay the API tells us to wait
+                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                    match = re.search(r"Please retry in ([\d.]+)s", error_str)
+                    wait_time = float(match.group(1)) if match else 60.0
+                else:
+                    wait_time = retry_delay * (1.5**attempt)
                 logger.error(
                     f"Attempt {attempt + 1}/{max_retries} failed for embedding ({len(texts)} texts): {e!r}. Retrying in {wait_time:.1f}s..."
                 )
